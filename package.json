@@ -49,12 +49,11 @@
     "json-loader": "^0.5.4",
     "mocha": "^2.5.3",
     "npm-check": "^5.2.2",
-    "webpack": "^1.13.1"
-  },
-  "dependencies": {
+    "webpack": "^1.13.1",
     "babel-runtime": "^6.9.2",
     "cheerio": "github:cheeriojs/cheerio#e65ad72",
-    "isomorphic-fetch": "^2.2.1"
+    "isomorphic-fetch": "^2.2.1",
+    "url-parse": "^1.1.1"
   },
   "engines": {
     "node": "4.x || 6.x",

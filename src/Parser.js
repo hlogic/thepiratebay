@@ -6,8 +6,10 @@
 import cheerio from 'cheerio';
 import fetch from 'isomorphic-fetch';
 import { baseUrl } from './Torrent';
+import UrlParse from 'url-parse';
 
-const maxConcurrentRequests = 2;
+
+const maxConcurrentRequests = 3;
 
 export function _parseTorrentIsVIP(element) {
   return (
@@ -25,18 +27,37 @@ export function isTorrentVerified(element) {
   return _parseTorrentIsVIP(element) || _parseTorrentIsTrusted(element);
 }
 
+export async function getProxyList() {
+  console.log('Retriving proxy list...');
+
+  const response = await fetch('https://proxybay.tv/')
+    .then(res => res.text());
+
+  const $ = cheerio.load(response);
+
+  const links = $('[rel="nofollow"]').map(function getElementLinks() {
+    return $(this).attr('href');
+  })
+  .get()
+  .filter((res, index) => (index < maxConcurrentRequests));
+
+  return links;
+}
+
 export function parsePage(url, parseCallback, filter = {}) {
-  const attempt = (error) => {
+  const attempt = async error => {
     if (error) console.log(error);
 
-    const requests = [];
-    const request = fetch(url, {
-      mode: 'no-cors'
-    });
+    const proxyUrls = [
+      'https://thepiratebay.org',
+      'https://thepiratebay.se',
+      'https://pirateproxy.one',
+      'https://ahoy.one'
+    ];
 
-    for (let i = 0; i < maxConcurrentRequests; i++) {
-      requests.push(request);
-    }
+    const requests = proxyUrls
+      .map(_url => (new UrlParse(url)).set('hostname', new UrlParse(_url).hostname).href)
+      .map(_url => fetch(_url, { mode: 'no-cors' }));
 
     return Promise.race(requests).then(response => response.text());
   };
@@ -121,7 +142,6 @@ export function parseTorrentPage(torrentPage) {
   const $ = cheerio.load(torrentPage);
   const name = $('#title').text().trim();
 
-  // filesCount = parseInt($('a[title="Files"]').text());
   const size = $('dt:contains(Size:) + dd').text().trim();
   const uploadDate = $('dt:contains(Uploaded:) + dd').text().trim();
   const uploader = $('dt:contains(By:) + dd').text().trim();
